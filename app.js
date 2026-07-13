@@ -5,6 +5,9 @@ const extensionIdInput = $('#extensionId');
 const postTextInput = $('#postText');
 const imageInput = $('#imageInput');
 const groupLinksInput = $('#groupLinks');
+const autoSubmitInput = $('#autoSubmit');
+const delayBeforePostInput = $('#delayBeforePost');
+const delayAfterPostInput = $('#delayAfterPost');
 const checkExtensionButton = $('#checkExtension');
 const startButton = $('#startButton');
 const stopButton = $('#stopButton');
@@ -24,6 +27,15 @@ let pollTimer = null;
 extensionIdInput.value = localStorage.getItem('fbGroupPoster.extensionId') || '';
 postTextInput.value = localStorage.getItem('fbGroupPoster.postText') || '';
 groupLinksInput.value = localStorage.getItem('fbGroupPoster.groupLinks') || '';
+autoSubmitInput.checked = localStorage.getItem('fbGroupPoster.autoSubmit') !== 'false';
+delayBeforePostInput.value = localStorage.getItem('fbGroupPoster.delayBeforePost') || '5';
+delayAfterPostInput.value = localStorage.getItem('fbGroupPoster.delayAfterPost') || '8';
+
+function clamp(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
+}
 
 function normalizeGroupUrl(raw) {
   try {
@@ -55,6 +67,9 @@ function saveForm() {
   localStorage.setItem('fbGroupPoster.extensionId', extensionIdInput.value.trim());
   localStorage.setItem('fbGroupPoster.postText', postTextInput.value);
   localStorage.setItem('fbGroupPoster.groupLinks', groupLinksInput.value);
+  localStorage.setItem('fbGroupPoster.autoSubmit', String(autoSubmitInput.checked));
+  localStorage.setItem('fbGroupPoster.delayBeforePost', String(clamp(delayBeforePostInput.value, 2, 60, 5)));
+  localStorage.setItem('fbGroupPoster.delayAfterPost', String(clamp(delayAfterPostInput.value, 3, 120, 8)));
 }
 
 function sendToExtension(message) {
@@ -169,9 +184,19 @@ async function startQueue() {
   try {
     await sendToExtension({
       type: 'START_QUEUE',
-      payload: { text, images: preparedImages, groups }
+      payload: {
+        text,
+        images: preparedImages,
+        groups,
+        options: {
+          autoSubmit: autoSubmitInput.checked,
+          delayBeforePostMs: clamp(delayBeforePostInput.value, 2, 60, 5) * 1000,
+          delayAfterPostMs: clamp(delayAfterPostInput.value, 3, 120, 8) * 1000,
+          continueOnError: true
+        }
+      }
     });
-    connectionStatus.textContent = `Đã bắt đầu hàng đợi ${groups.length} nhóm.`;
+    connectionStatus.textContent = `Đã bắt đầu đăng trên ${groups.length} nhóm.`;
     startPolling();
   } catch (error) {
     connectionStatus.textContent = `Không thể bắt đầu: ${error.message}`;
@@ -205,7 +230,8 @@ function renderStatus(status) {
   resultList.innerHTML = (status.results || []).slice().reverse().map((item) => {
     const cls = item.status === 'posted' ? 'ok' : item.status === 'skipped' ? 'skip' : 'error';
     const label = item.status === 'posted' ? 'Đã đăng' : item.status === 'skipped' ? 'Bỏ qua' : 'Lỗi';
-    return `<div class="result-item"><span class="${cls}">${label}</span><span>${escapeHtml(item.url)}</span></div>`;
+    const detail = item.detail ? `<small>${escapeHtml(item.detail)}</small>` : '';
+    return `<div class="result-item"><span class="${cls}">${label}</span><div><span>${escapeHtml(item.url)}</span>${detail}</div></div>`;
   }).join('');
 }
 
@@ -214,7 +240,7 @@ async function refreshStatus() {
     const response = await sendToExtension({ type: 'GET_STATUS' });
     renderStatus(response.status);
   } catch {
-    // Không thay đổi giao diện khi extension tạm thời không phản hồi.
+    // Giữ nguyên trạng thái khi extension tạm thời không phản hồi.
   }
 }
 
@@ -227,6 +253,9 @@ function startPolling() {
 postTextInput.addEventListener('input', () => { updateCounters(); saveForm(); });
 groupLinksInput.addEventListener('input', () => { updateCounters(); saveForm(); });
 extensionIdInput.addEventListener('input', saveForm);
+autoSubmitInput.addEventListener('change', saveForm);
+delayBeforePostInput.addEventListener('input', saveForm);
+delayAfterPostInput.addEventListener('input', saveForm);
 imageInput.addEventListener('change', prepareSelectedImages);
 checkExtensionButton.addEventListener('click', checkExtension);
 startButton.addEventListener('click', startQueue);

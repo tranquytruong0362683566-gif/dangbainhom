@@ -9,8 +9,8 @@
 <body>
   <main class="container">
     <header>
-      <h1>Đăng bài lên nhóm</h1>
-      <p>Chuẩn bị nội dung và ảnh cho từng nhóm Facebook.</p>
+      <h1>Đăng bài lên nhiều nhóm</h1>
+      <p>Tự động mở nhóm, nhập nội dung, tải ảnh, bấm Đăng và chuyển sang nhóm tiếp theo.</p>
     </header>
 
     <section class="card">
@@ -41,8 +41,27 @@
       <div class="counter"><span id="groupCount">0</span> nhóm hợp lệ</div>
     </section>
 
+    <section class="card">
+      <div class="setting-title">Thiết lập tự động</div>
+      <label class="check-row" for="autoSubmit">
+        <input id="autoSubmit" type="checkbox" checked>
+        <span>Tự động bấm nút Đăng sau khi nội dung và ảnh sẵn sàng</span>
+      </label>
+      <div class="settings-grid">
+        <label class="field-label" for="delayBeforePost">
+          <span>Chờ trước khi bấm Đăng</span>
+          <div class="number-wrap"><input id="delayBeforePost" type="number" min="2" max="60" value="5"><span>giây</span></div>
+        </label>
+        <label class="field-label" for="delayAfterPost">
+          <span>Chờ sau khi đăng thành công</span>
+          <div class="number-wrap"><input id="delayAfterPost" type="number" min="3" max="120" value="8"><span>giây</span></div>
+        </label>
+      </div>
+      <div class="hint">Lỗi riêng của một nhóm sẽ được ghi lại rồi chuyển sang nhóm tiếp theo. Lỗi chặn thao tác ở cấp tài khoản sẽ dừng hàng đợi để kiểm tra.</div>
+    </section>
+
     <section class="actions">
-      <button id="startButton" class="primary" type="button">Bắt đầu chuẩn bị đăng</button>
+      <button id="startButton" class="primary" type="button">Bắt đầu đăng tự động</button>
       <button id="stopButton" class="danger" type="button">Dừng hàng đợi</button>
     </section>
 
