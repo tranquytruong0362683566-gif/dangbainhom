@@ -10,16 +10,79 @@
   <main class="container">
     <header>
       <h1>Đăng bài lên nhiều nhóm</h1>
-      <p>Tự động mở nhóm, dán nội dung theo logic ô bình luận, tải ảnh, bấm Đăng và chuyển sang nhóm tiếp theo.</p>
+      <p>Tự động mở nhóm, dán nội dung, tải nhiều ảnh, bấm Đăng và chuyển sang nhóm tiếp theo.</p>
     </header>
 
-    <section class="card">
-      <label for="extensionId">Extension ID</label>
-      <div class="row">
-        <input id="extensionId" type="text" autocomplete="off" placeholder="Dán Extension ID tại chrome://extensions">
-        <button id="checkExtension" class="secondary" type="button">Kiểm tra</button>
+    <details id="advancedSettings" class="card advanced-card">
+      <summary>
+        <span>
+          <strong>Cài đặt nâng cao</strong>
+          <small>Extension ID và thiết lập tự động</small>
+        </span>
+        <span class="summary-toggle" aria-hidden="true"></span>
+      </summary>
+
+      <div class="advanced-content">
+        <div class="advanced-section">
+          <label for="extensionId">Extension ID</label>
+          <div class="row">
+            <input id="extensionId" type="text" autocomplete="off" placeholder="Dán Extension ID tại chrome://extensions">
+            <button id="checkExtension" class="secondary" type="button">Kiểm tra</button>
+          </div>
+          <div id="connectionStatus" class="hint">Chưa kiểm tra kết nối.</div>
+        </div>
+
+        <div class="advanced-divider"></div>
+
+        <div class="advanced-section">
+          <div class="setting-title">Thiết lập tự động</div>
+          <label class="check-row" for="autoSubmit">
+            <input id="autoSubmit" type="checkbox" checked>
+            <span>Tự động bấm nút Đăng sau khi nội dung và ảnh sẵn sàng</span>
+          </label>
+          <div class="settings-grid">
+            <label class="field-label" for="delayBeforePost">
+              <span>Chờ trước khi bấm Đăng</span>
+              <div class="number-wrap"><input id="delayBeforePost" type="number" min="2" max="60" value="5"><span>giây</span></div>
+            </label>
+            <label class="field-label" for="delayAfterPost">
+              <span>Chờ sau khi đăng thành công</span>
+              <div class="number-wrap"><input id="delayAfterPost" type="number" min="3" max="120" value="8"><span>giây</span></div>
+            </label>
+          </div>
+          <div class="hint">Lỗi riêng của một nhóm sẽ được ghi lại rồi chuyển sang nhóm tiếp theo. Lỗi chặn thao tác ở cấp tài khoản sẽ dừng hàng đợi.</div>
+        </div>
       </div>
-      <div id="connectionStatus" class="hint">Chưa kiểm tra kết nối.</div>
+    </details>
+
+    <section class="card template-card">
+      <div class="section-heading">
+        <div>
+          <div class="setting-title">Mẫu bài viết</div>
+          <div class="hint">Lưu nội dung và toàn bộ ảnh để dùng lại ở lần sau.</div>
+        </div>
+        <span id="templateCount" class="badge">0 mẫu</span>
+      </div>
+
+      <div class="template-picker">
+        <label for="templateSelect">Mẫu đã lưu</label>
+        <div class="row template-select-row">
+          <select id="templateSelect">
+            <option value="">Chọn một mẫu bài viết</option>
+          </select>
+          <button id="loadTemplate" class="secondary" type="button">Dùng mẫu</button>
+        </div>
+      </div>
+
+      <label for="templateName">Tên mẫu</label>
+      <input id="templateName" type="text" maxlength="80" autocomplete="off" placeholder="Ví dụ: Bài giới thiệu sản phẩm tháng 7">
+
+      <div class="template-buttons">
+        <button id="saveTemplate" class="secondary" type="button">Lưu mẫu mới</button>
+        <button id="updateTemplate" class="secondary" type="button">Cập nhật mẫu</button>
+        <button id="deleteTemplate" class="danger" type="button">Xóa mẫu</button>
+      </div>
+      <div id="templateStatus" class="hint">Chưa chọn mẫu.</div>
     </section>
 
     <section class="card">
@@ -41,29 +104,11 @@
       <div class="counter"><span id="groupCount">0</span> nhóm hợp lệ</div>
     </section>
 
-    <section class="card">
-      <div class="setting-title">Thiết lập tự động</div>
-      <label class="check-row" for="autoSubmit">
-        <input id="autoSubmit" type="checkbox" checked>
-        <span>Tự động bấm nút Đăng sau khi nội dung và ảnh sẵn sàng</span>
-      </label>
-      <div class="settings-grid">
-        <label class="field-label" for="delayBeforePost">
-          <span>Chờ trước khi bấm Đăng</span>
-          <div class="number-wrap"><input id="delayBeforePost" type="number" min="2" max="60" value="5"><span>giây</span></div>
-        </label>
-        <label class="field-label" for="delayAfterPost">
-          <span>Chờ sau khi đăng thành công</span>
-          <div class="number-wrap"><input id="delayAfterPost" type="number" min="3" max="120" value="8"><span>giây</span></div>
-        </label>
-      </div>
-      <div class="hint">Lỗi riêng của một nhóm sẽ được ghi lại rồi chuyển sang nhóm tiếp theo. Lỗi chặn thao tác ở cấp tài khoản sẽ dừng hàng đợi để kiểm tra.</div>
-    </section>
-
     <section class="actions">
       <button id="startButton" class="primary" type="button">Bắt đầu đăng tự động</button>
       <button id="stopButton" class="danger" type="button">Dừng hàng đợi</button>
     </section>
+    <div id="operationStatus" class="operation-status">Sẵn sàng.</div>
 
     <section class="card status-card">
       <div class="status-head">
