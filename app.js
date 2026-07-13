@@ -29,10 +29,23 @@ const saveTemplateButton = $('#saveTemplate');
 const updateTemplateButton = $('#updateTemplate');
 const deleteTemplateButton = $('#deleteTemplate');
 const templateStatus = $('#templateStatus');
-const templateCount = $('#templateCount');
 const templateListLeft = $('#templateListLeft');
 const templateListRight = $('#templateListRight');
 const selectedTemplateBadge = $('#selectedTemplateBadge');
+const templateCountLeft = $('#templateCountLeft');
+const templateCountRight = $('#templateCountRight');
+const aiApiUrlInput = $('#aiApiUrl');
+const aiApiKeyInput = $('#aiApiKey');
+const aiModelInput = $('#aiModel');
+const aiSystemPromptInput = $('#aiSystemPrompt');
+const aiSettingsStatus = $('#aiSettingsStatus');
+const toggleAiApiKeyButton = $('#toggleAiApiKey');
+const aiWriteButton = $('#aiWriteButton');
+const aiComposerPanel = $('#aiComposerPanel');
+const aiBriefInput = $('#aiBrief');
+const generateAiContentButton = $('#generateAiContent');
+const closeAiPanelButton = $('#closeAiPanel');
+const aiContentStatus = $('#aiContentStatus');
 
 const TEMPLATE_DB_NAME = 'fbGroupPosterDatabase';
 const TEMPLATE_DB_VERSION = 1;
@@ -50,6 +63,11 @@ autoSubmitInput.checked = localStorage.getItem('fbGroupPoster.autoSubmit') !== '
 delayBeforePostInput.value = localStorage.getItem('fbGroupPoster.delayBeforePost') || '5';
 delayAfterPostInput.value = localStorage.getItem('fbGroupPoster.delayAfterPost') || '8';
 advancedSettings.open = localStorage.getItem('fbGroupPoster.advancedOpen') === 'true';
+aiApiUrlInput.value = localStorage.getItem('fbGroupPoster.aiApiUrl') || 'https://console.flatkey.ai/v1/chat/completions';
+aiApiKeyInput.value = localStorage.getItem('fbGroupPoster.aiApiKey') || '';
+aiModelInput.value = localStorage.getItem('fbGroupPoster.aiModel') || 'gpt-5.4-mini';
+aiSystemPromptInput.value = localStorage.getItem('fbGroupPoster.aiSystemPrompt') || aiSystemPromptInput.value;
+aiBriefInput.value = localStorage.getItem('fbGroupPoster.aiBrief') || '';
 
 function clamp(value, min, max, fallback) {
   const number = Number(value);
@@ -90,6 +108,11 @@ function saveForm() {
   localStorage.setItem('fbGroupPoster.autoSubmit', String(autoSubmitInput.checked));
   localStorage.setItem('fbGroupPoster.delayBeforePost', String(clamp(delayBeforePostInput.value, 2, 60, 5)));
   localStorage.setItem('fbGroupPoster.delayAfterPost', String(clamp(delayAfterPostInput.value, 3, 120, 8)));
+  localStorage.setItem('fbGroupPoster.aiApiUrl', aiApiUrlInput.value.trim());
+  localStorage.setItem('fbGroupPoster.aiApiKey', aiApiKeyInput.value.trim());
+  localStorage.setItem('fbGroupPoster.aiModel', aiModelInput.value.trim());
+  localStorage.setItem('fbGroupPoster.aiSystemPrompt', aiSystemPromptInput.value);
+  localStorage.setItem('fbGroupPoster.aiBrief', aiBriefInput.value);
 }
 
 function setOperationStatus(message) {
@@ -137,7 +160,7 @@ function fileToCompressedDataUrl(file, maxSide = 2048, quality = 0.88) {
         ctx.drawImage(img, 0, 0, width, height);
         const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
         const dataUrl = canvas.toDataURL(mime, mime === 'image/png' ? undefined : quality);
-        resolve({ name: file.name, type: mime, dataUrl });
+        resolve({ id: createTemplateId(), name: file.name, type: mime, dataUrl });
       };
       img.src = String(reader.result);
     };
@@ -165,6 +188,7 @@ function renderPreparedImages() {
 
 async function prepareSelectedImages() {
   const files = [...imageInput.files];
+  imageInput.value = '';
   preparedImages = [];
   imagePreview.innerHTML = '';
 
@@ -260,6 +284,7 @@ function currentTemplatePayload(existing = null) {
     name,
     text,
     images: preparedImages.map((image) => ({
+      id: createTemplateId(),
       name: image.name || 'image.jpg',
       type: image.type || 'image/jpeg',
       dataUrl: image.dataUrl
@@ -376,8 +401,10 @@ function renderTemplateColumn(container, templates, emptyText) {
 function renderTemplateLists() {
   const leftTemplates = templateCache.filter((_, index) => index % 2 === 0);
   const rightTemplates = templateCache.filter((_, index) => index % 2 === 1);
-  renderTemplateColumn(templateListLeft, leftTemplates, 'Chưa có mẫu. Soạn bài ở giữa rồi bấm “Lưu mẫu mới”.');
-  renderTemplateColumn(templateListRight, rightTemplates, templateCache.length < 2 ? 'Các mẫu tiếp theo sẽ tự động xuất hiện ở cột này.' : 'Chưa có mẫu ở cột này.');
+  templateCountLeft.textContent = `${leftTemplates.length} mẫu`;
+  templateCountRight.textContent = `${rightTemplates.length} mẫu`;
+  renderTemplateColumn(templateListLeft, leftTemplates, 'Chưa có mẫu bên trái. Soạn bài ở giữa rồi bấm “Lưu mẫu mới”.');
+  renderTemplateColumn(templateListRight, rightTemplates, templateCache.length < 2 ? 'Mẫu thứ hai sẽ xuất hiện ở bên phải.' : 'Chưa có mẫu bên phải.');
 }
 
 async function refreshTemplates(preferredId = '') {
@@ -388,7 +415,6 @@ async function refreshTemplates(preferredId = '') {
 
     const requestedId = preferredId || selectedTemplateId || localStorage.getItem('fbGroupPoster.lastTemplateId') || '';
     selectedTemplateId = templateCache.some((item) => item.id === requestedId) ? requestedId : '';
-    templateCount.textContent = `${templateCache.length} mẫu`;
     renderTemplateLists();
     updateSelectedTemplateName();
   } catch (error) {
@@ -500,6 +526,129 @@ async function deleteSelectedTemplate() {
     templateStatus.textContent = `Không xóa được mẫu: ${error.message}`;
   } finally {
     deleteTemplateButton.disabled = false;
+  }
+}
+
+function normalizeAiApiUrl(raw) {
+  const value = String(raw || '').trim();
+  if (!value) throw new Error('Chưa nhập API URL.');
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error('API URL không hợp lệ.');
+  }
+  if (!/^https?:$/.test(url.protocol)) throw new Error('API URL phải dùng HTTP hoặc HTTPS.');
+  return url.toString();
+}
+
+function extractAiContent(data) {
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content === 'string' && content.trim()) return content.trim();
+  if (Array.isArray(content)) {
+    const text = content
+      .map((item) => typeof item === 'string' ? item : item?.text || item?.content || '')
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+    if (text) return text;
+  }
+  if (typeof data?.output_text === 'string' && data.output_text.trim()) return data.output_text.trim();
+  throw new Error('API không trả về nội dung trong choices[0].message.content.');
+}
+
+function aiErrorMessage(data, response) {
+  return data?.error?.message || data?.message || `API trả về lỗi HTTP ${response.status}.`;
+}
+
+function setAiPanelOpen(open) {
+  aiComposerPanel.hidden = !open;
+  aiWriteButton.classList.toggle('active', open);
+  if (open) {
+    if (!aiBriefInput.value.trim() && postTextInput.value.trim()) {
+      aiBriefInput.value = postTextInput.value.trim();
+      saveForm();
+    }
+    requestAnimationFrame(() => aiBriefInput.focus());
+  }
+}
+
+async function generateAiContent() {
+  const brief = aiBriefInput.value.trim();
+  const apiKey = aiApiKeyInput.value.trim();
+  const model = aiModelInput.value.trim();
+  const systemPrompt = aiSystemPromptInput.value.trim();
+
+  if (!brief) {
+    aiContentStatus.textContent = 'Hãy nhập yêu cầu để AI viết bài.';
+    aiBriefInput.focus();
+    return;
+  }
+  if (!apiKey) {
+    aiContentStatus.textContent = 'Chưa nhập API key trong Cài đặt nâng cao.';
+    advancedSettings.open = true;
+    aiApiKeyInput.focus();
+    return;
+  }
+  if (!model) {
+    aiContentStatus.textContent = 'Chưa nhập tên model AI.';
+    advancedSettings.open = true;
+    aiModelInput.focus();
+    return;
+  }
+
+  let apiUrl;
+  try {
+    apiUrl = normalizeAiApiUrl(aiApiUrlInput.value);
+  } catch (error) {
+    aiContentStatus.textContent = error.message;
+    advancedSettings.open = true;
+    aiApiUrlInput.focus();
+    return;
+  }
+
+  saveForm();
+  generateAiContentButton.disabled = true;
+  aiWriteButton.disabled = true;
+  aiContentStatus.textContent = 'AI đang viết content...';
+
+  try {
+    const messages = [];
+    if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+    messages.push({ role: 'user', content: brief });
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({ model, messages })
+    });
+
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error(`API trả về dữ liệu không phải JSON (HTTP ${response.status}).`);
+    }
+
+    if (!response.ok) throw new Error(aiErrorMessage(data, response));
+
+    const generated = extractAiContent(data).replace(/\r\n?/g, '\n');
+    postTextInput.value = generated;
+    updateCounters();
+    saveForm();
+    aiContentStatus.textContent = `Đã tạo ${generated.length} ký tự bằng model ${model}.`;
+    setOperationStatus('AI đã cập nhật nội dung bài đăng.');
+  } catch (error) {
+    const message = error instanceof TypeError
+      ? 'Không gọi được API. Hãy kiểm tra kết nối, API URL hoặc quyền CORS của máy chủ.'
+      : error.message;
+    aiContentStatus.textContent = `Lỗi AI: ${message}`;
+  } finally {
+    generateAiContentButton.disabled = false;
+    aiWriteButton.disabled = false;
   }
 }
 
@@ -615,6 +764,19 @@ extensionIdInput.addEventListener('input', () => {
 autoSubmitInput.addEventListener('change', saveForm);
 delayBeforePostInput.addEventListener('input', saveForm);
 delayAfterPostInput.addEventListener('input', saveForm);
+aiApiUrlInput.addEventListener('input', saveForm);
+aiApiKeyInput.addEventListener('input', saveForm);
+aiModelInput.addEventListener('input', saveForm);
+aiSystemPromptInput.addEventListener('input', saveForm);
+aiBriefInput.addEventListener('input', saveForm);
+toggleAiApiKeyButton.addEventListener('click', () => {
+  const reveal = aiApiKeyInput.type === 'password';
+  aiApiKeyInput.type = reveal ? 'text' : 'password';
+  toggleAiApiKeyButton.textContent = reveal ? 'Ẩn key' : 'Hiện key';
+});
+aiWriteButton.addEventListener('click', () => setAiPanelOpen(aiComposerPanel.hidden));
+closeAiPanelButton.addEventListener('click', () => setAiPanelOpen(false));
+generateAiContentButton.addEventListener('click', generateAiContent);
 advancedSettings.addEventListener('toggle', () => {
   localStorage.setItem('fbGroupPoster.advancedOpen', String(advancedSettings.open));
 });

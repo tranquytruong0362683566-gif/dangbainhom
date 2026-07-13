@@ -66,6 +66,30 @@
           </div>
           <div class="hint">Lỗi riêng của một nhóm sẽ được ghi lại rồi chuyển sang nhóm tiếp theo.</div>
         </div>
+
+        <div class="advanced-divider"></div>
+
+        <div class="advanced-section ai-settings-section">
+          <div class="setting-title">Thiết lập AI viết content</div>
+          <div class="settings-grid ai-settings-grid">
+            <label class="field-label" for="aiApiUrl">
+              <span>API URL</span>
+              <input id="aiApiUrl" type="text" autocomplete="off" value="https://console.flatkey.ai/v1/chat/completions">
+            </label>
+            <label class="field-label" for="aiModel">
+              <span>Model</span>
+              <input id="aiModel" type="text" autocomplete="off" value="gpt-5.4-mini" placeholder="gpt-5.4-mini">
+            </label>
+          </div>
+          <label for="aiApiKey">API key</label>
+          <div class="row ai-key-row">
+            <input id="aiApiKey" type="password" autocomplete="new-password" placeholder="Dán API key Flatkey AI">
+            <button id="toggleAiApiKey" class="secondary" type="button">Hiện key</button>
+          </div>
+          <label for="aiSystemPrompt" class="ai-prompt-label">Hướng dẫn mặc định cho AI</label>
+          <textarea id="aiSystemPrompt" rows="4" placeholder="Mô tả phong cách bài viết bạn muốn AI tạo.">Bạn là chuyên gia viết content Facebook bằng tiếng Việt. Hãy viết bài tự nhiên, rõ ràng, dễ đọc, có xuống dòng hợp lý, bám sát yêu cầu của người dùng và chỉ trả về nội dung bài đăng hoàn chỉnh.</textarea>
+          <div id="aiSettingsStatus" class="hint">API key chỉ được lưu trong trình duyệt đang sử dụng.</div>
+        </div>
       </div>
     </details>
 
@@ -73,10 +97,10 @@
       <aside class="template-panel template-panel-left" aria-label="Danh sách mẫu bên trái">
         <div class="template-panel-head">
           <div>
-            <span class="panel-kicker">KHO MẪU</span>
-            <h2>Mẫu bài viết</h2>
+            <span class="panel-kicker">MẪU BÊN TRÁI</span>
+            <h2>Danh sách mẫu</h2>
           </div>
-          <span id="templateCount" class="badge">0 mẫu</span>
+          <span id="templateCountLeft" class="badge">0 mẫu</span>
         </div>
         <p class="panel-description">Bấm vào thẻ để dùng ngay nội dung và ảnh của mẫu.</p>
         <div id="templateListLeft" class="template-list"></div>
@@ -89,7 +113,21 @@
               <span class="panel-kicker">NỘI DUNG</span>
               <h2>Soạn bài đăng</h2>
             </div>
-            <span class="counter-chip"><span id="charCount">0</span> ký tự</span>
+            <div class="composer-head-actions">
+              <button id="aiWriteButton" class="ai-write-button" type="button"><span>✦</span> AI viết content</button>
+              <span class="counter-chip"><span id="charCount">0</span> ký tự</span>
+            </div>
+          </div>
+          <div id="aiComposerPanel" class="ai-composer-panel" hidden>
+            <label for="aiBrief">Yêu cầu AI viết bài</label>
+            <textarea id="aiBrief" rows="3" placeholder="Ví dụ: Viết bài giới thiệu bộ điện năng lượng mặt trời, giọng chuyên nghiệp, nhấn mạnh tiết kiệm điện và có lời mời liên hệ."></textarea>
+            <div class="ai-panel-footer">
+              <div id="aiContentStatus" class="hint">AI sẽ thay nội dung trong ô soạn bài bằng kết quả mới.</div>
+              <div class="ai-panel-actions">
+                <button id="closeAiPanel" class="secondary" type="button">Đóng</button>
+                <button id="generateAiContent" class="primary" type="button">Tạo content</button>
+              </div>
+            </div>
           </div>
           <label class="sr-only" for="postText">Nội dung bài viết</label>
           <textarea id="postText" rows="11" placeholder="Nhập nội dung cần đăng..."></textarea>
@@ -169,12 +207,12 @@
       <aside class="template-panel template-panel-right" aria-label="Danh sách mẫu bên phải">
         <div class="template-panel-head">
           <div>
-            <span class="panel-kicker">MẪU GẦN ĐÂY</span>
-            <h2>Chọn nhanh</h2>
+            <span class="panel-kicker">MẪU BÊN PHẢI</span>
+            <h2>Danh sách mẫu</h2>
           </div>
-          <span class="panel-icon">✦</span>
+          <span id="templateCountRight" class="badge">0 mẫu</span>
         </div>
-        <p class="panel-description">Các mẫu được chia đều sang hai bên để giao diện cân xứng và dễ chọn.</p>
+        <p class="panel-description">Bấm vào thẻ để nạp ngay nội dung và toàn bộ ảnh của mẫu.</p>
         <div id="templateListRight" class="template-list"></div>
       </aside>
     </section>
