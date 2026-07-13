@@ -12,6 +12,8 @@ const checkExtensionButton = $('#checkExtension');
 const startButton = $('#startButton');
 const stopButton = $('#stopButton');
 const connectionStatus = $('#connectionStatus');
+const heroConnectionText = $('#heroConnectionText');
+const heroStatus = $('.hero-status');
 const operationStatus = $('#operationStatus');
 const imagePreview = $('#imagePreview');
 const charCount = $('#charCount');
@@ -22,14 +24,15 @@ const progressBar = $('#progressBar');
 const currentGroup = $('#currentGroup');
 const resultList = $('#resultList');
 const advancedSettings = $('#advancedSettings');
-const templateSelect = $('#templateSelect');
 const templateNameInput = $('#templateName');
 const saveTemplateButton = $('#saveTemplate');
 const updateTemplateButton = $('#updateTemplate');
-const loadTemplateButton = $('#loadTemplate');
 const deleteTemplateButton = $('#deleteTemplate');
 const templateStatus = $('#templateStatus');
 const templateCount = $('#templateCount');
+const templateListLeft = $('#templateListLeft');
+const templateListRight = $('#templateListRight');
+const selectedTemplateBadge = $('#selectedTemplateBadge');
 
 const TEMPLATE_DB_NAME = 'fbGroupPosterDatabase';
 const TEMPLATE_DB_VERSION = 1;
@@ -38,6 +41,7 @@ const TEMPLATE_STORE = 'postTemplates';
 let preparedImages = [];
 let pollTimer = null;
 let templateCache = [];
+let selectedTemplateId = localStorage.getItem('fbGroupPoster.lastTemplateId') || '';
 
 extensionIdInput.value = localStorage.getItem('fbGroupPoster.extensionId') || '';
 postTextInput.value = localStorage.getItem('fbGroupPoster.postText') || '';
@@ -90,6 +94,12 @@ function saveForm() {
 
 function setOperationStatus(message) {
   operationStatus.textContent = message;
+}
+
+function setConnectionDisplay(message, connected = false) {
+  connectionStatus.textContent = message;
+  heroConnectionText.textContent = connected ? 'Extension đã kết nối' : 'Chưa kết nối extension';
+  heroStatus.classList.toggle('connected', connected);
 }
 
 function sendToExtension(message) {
@@ -259,28 +269,127 @@ function currentTemplatePayload(existing = null) {
   };
 }
 
+function formatTemplateDate(timestamp) {
+  if (!timestamp) return 'Chưa có thời gian';
+  try {
+    return new Intl.DateTimeFormat('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(timestamp));
+  } catch {
+    return 'Vừa cập nhật';
+  }
+}
+
+function templateInitial(name) {
+  return String(name || 'M').trim().charAt(0) || 'M';
+}
+
+function createTemplateCard(template) {
+  const images = Array.isArray(template.images) ? template.images.filter((image) => image?.dataUrl) : [];
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = `template-item${template.id === selectedTemplateId ? ' active' : ''}`;
+  button.dataset.templateId = template.id;
+  button.setAttribute('aria-label', `Dùng mẫu ${template.name}`);
+
+  const top = document.createElement('div');
+  top.className = 'template-item-top';
+
+  const avatar = document.createElement('span');
+  avatar.className = 'template-avatar';
+  avatar.textContent = templateInitial(template.name);
+
+  const titleWrap = document.createElement('span');
+  titleWrap.className = 'template-title-wrap';
+
+  const title = document.createElement('span');
+  title.className = 'template-title';
+  title.textContent = template.name;
+
+  const date = document.createElement('span');
+  date.className = 'template-date';
+  date.textContent = formatTemplateDate(template.updatedAt || template.createdAt);
+
+  titleWrap.append(title, date);
+  top.append(avatar, titleWrap);
+
+  const copy = document.createElement('span');
+  copy.className = `template-copy${String(template.text || '').trim() ? '' : ' empty-copy'}`;
+  copy.textContent = String(template.text || '').trim() || 'Mẫu chỉ có hình ảnh.';
+
+  button.append(top, copy);
+
+  if (images.length) {
+    const thumbs = document.createElement('span');
+    thumbs.className = 'template-thumbs';
+    for (const image of images.slice(0, 3)) {
+      const thumb = document.createElement('img');
+      thumb.className = 'template-thumb';
+      thumb.alt = '';
+      thumb.loading = 'lazy';
+      thumb.src = image.dataUrl;
+      thumbs.appendChild(thumb);
+    }
+    if (images.length > 3) {
+      const more = document.createElement('span');
+      more.className = 'template-more';
+      more.textContent = `+${images.length - 3}`;
+      thumbs.appendChild(more);
+    }
+    button.appendChild(thumbs);
+  }
+
+  const meta = document.createElement('span');
+  meta.className = 'template-meta';
+
+  const statistics = document.createElement('span');
+  statistics.textContent = `${String(template.text || '').length} ký tự · ${images.length} ảnh`;
+
+  const use = document.createElement('span');
+  use.className = 'template-use';
+  use.textContent = template.id === selectedTemplateId ? 'Đã chọn' : 'Bấm để dùng';
+
+  meta.append(statistics, use);
+  button.appendChild(meta);
+  button.addEventListener('click', () => loadSelectedTemplate(template.id));
+  return button;
+}
+
+function renderTemplateColumn(container, templates, emptyText) {
+  container.innerHTML = '';
+  if (!templates.length) {
+    const empty = document.createElement('div');
+    empty.className = 'template-empty';
+    empty.textContent = emptyText;
+    container.appendChild(empty);
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  templates.forEach((template) => fragment.appendChild(createTemplateCard(template)));
+  container.appendChild(fragment);
+}
+
+function renderTemplateLists() {
+  const leftTemplates = templateCache.filter((_, index) => index % 2 === 0);
+  const rightTemplates = templateCache.filter((_, index) => index % 2 === 1);
+  renderTemplateColumn(templateListLeft, leftTemplates, 'Chưa có mẫu. Soạn bài ở giữa rồi bấm “Lưu mẫu mới”.');
+  renderTemplateColumn(templateListRight, rightTemplates, templateCache.length < 2 ? 'Các mẫu tiếp theo sẽ tự động xuất hiện ở cột này.' : 'Chưa có mẫu ở cột này.');
+}
+
 async function refreshTemplates(preferredId = '') {
   try {
     templateCache = (await getAllTemplates())
       .filter((item) => item && item.id && item.name)
       .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
-    const previousValue = preferredId || templateSelect.value || localStorage.getItem('fbGroupPoster.lastTemplateId') || '';
-    templateSelect.innerHTML = '<option value="">Chọn một mẫu bài viết</option>';
-
-    for (const template of templateCache) {
-      const option = document.createElement('option');
-      option.value = template.id;
-      const imageCount = Array.isArray(template.images) ? template.images.length : 0;
-      option.textContent = `${template.name}${imageCount ? ` · ${imageCount} ảnh` : ''}`;
-      templateSelect.appendChild(option);
-    }
-
-    if (templateCache.some((item) => item.id === previousValue)) {
-      templateSelect.value = previousValue;
-    }
-
+    const requestedId = preferredId || selectedTemplateId || localStorage.getItem('fbGroupPoster.lastTemplateId') || '';
+    selectedTemplateId = templateCache.some((item) => item.id === requestedId) ? requestedId : '';
     templateCount.textContent = `${templateCache.length} mẫu`;
+    renderTemplateLists();
     updateSelectedTemplateName();
   } catch (error) {
     templateStatus.textContent = `Không đọc được mẫu: ${error.message}`;
@@ -288,18 +397,20 @@ async function refreshTemplates(preferredId = '') {
 }
 
 function selectedTemplateFromCache() {
-  return templateCache.find((item) => item.id === templateSelect.value) || null;
+  return templateCache.find((item) => item.id === selectedTemplateId) || null;
 }
 
 function updateSelectedTemplateName() {
   const selected = selectedTemplateFromCache();
   if (!selected) {
-    templateStatus.textContent = templateCache.length ? 'Chọn một mẫu để dùng, cập nhật hoặc xóa.' : 'Chưa có mẫu bài viết nào.';
+    selectedTemplateBadge.textContent = 'Chưa chọn mẫu';
+    templateStatus.textContent = templateCache.length ? 'Bấm vào một thẻ mẫu ở hai bên để sử dụng.' : 'Chưa có mẫu bài viết nào.';
     return;
   }
   templateNameInput.value = selected.name;
+  selectedTemplateBadge.textContent = selected.name;
   const imageCount = Array.isArray(selected.images) ? selected.images.length : 0;
-  templateStatus.textContent = `Đã chọn “${selected.name}” · ${selected.text?.length || 0} ký tự · ${imageCount} ảnh.`;
+  templateStatus.textContent = `Đang chọn “${selected.name}” · ${selected.text?.length || 0} ký tự · ${imageCount} ảnh.`;
   localStorage.setItem('fbGroupPoster.lastTemplateId', selected.id);
 }
 
@@ -308,6 +419,7 @@ async function saveNewTemplate() {
   try {
     const template = currentTemplatePayload();
     await putTemplate(template);
+    selectedTemplateId = template.id;
     await refreshTemplates(template.id);
     templateStatus.textContent = `Đã lưu mẫu mới “${template.name}”.`;
   } catch (error) {
@@ -320,7 +432,7 @@ async function saveNewTemplate() {
 async function updateSelectedTemplate() {
   const selected = selectedTemplateFromCache();
   if (!selected) {
-    templateStatus.textContent = 'Hãy chọn mẫu cần cập nhật.';
+    templateStatus.textContent = 'Hãy bấm chọn mẫu cần cập nhật ở cột bên trái hoặc bên phải.';
     return;
   }
 
@@ -328,6 +440,7 @@ async function updateSelectedTemplate() {
   try {
     const template = currentTemplatePayload(selected);
     await putTemplate(template);
+    selectedTemplateId = template.id;
     await refreshTemplates(template.id);
     templateStatus.textContent = `Đã cập nhật mẫu “${template.name}”.`;
   } catch (error) {
@@ -337,14 +450,16 @@ async function updateSelectedTemplate() {
   }
 }
 
-async function loadSelectedTemplate() {
-  const id = templateSelect.value;
+async function loadSelectedTemplate(id = selectedTemplateId) {
   if (!id) {
-    templateStatus.textContent = 'Hãy chọn mẫu cần sử dụng.';
+    templateStatus.textContent = 'Hãy bấm chọn mẫu cần sử dụng.';
     return;
   }
 
-  loadTemplateButton.disabled = true;
+  selectedTemplateId = id;
+  renderTemplateLists();
+  updateSelectedTemplateName();
+
   try {
     const template = await getTemplate(id);
     if (!template) throw new Error('Không tìm thấy mẫu đã chọn.');
@@ -358,19 +473,17 @@ async function loadSelectedTemplate() {
     templateNameInput.value = template.name;
     updateCounters();
     saveForm();
-    templateStatus.textContent = `Đã tải mẫu “${template.name}” với ${preparedImages.length} ảnh.`;
+    templateStatus.textContent = `Đã nạp mẫu “${template.name}” với ${preparedImages.length} ảnh.`;
     setOperationStatus(`Đang sử dụng mẫu “${template.name}”.`);
   } catch (error) {
     templateStatus.textContent = `Không tải được mẫu: ${error.message}`;
-  } finally {
-    loadTemplateButton.disabled = false;
   }
 }
 
 async function deleteSelectedTemplate() {
   const selected = selectedTemplateFromCache();
   if (!selected) {
-    templateStatus.textContent = 'Hãy chọn mẫu cần xóa.';
+    templateStatus.textContent = 'Hãy bấm chọn mẫu cần xóa.';
     return;
   }
   if (!window.confirm(`Xóa mẫu “${selected.name}”?`)) return;
@@ -379,7 +492,7 @@ async function deleteSelectedTemplate() {
   try {
     await removeTemplate(selected.id);
     localStorage.removeItem('fbGroupPoster.lastTemplateId');
-    templateSelect.value = '';
+    selectedTemplateId = '';
     templateNameInput.value = '';
     await refreshTemplates();
     templateStatus.textContent = `Đã xóa mẫu “${selected.name}”.`;
@@ -392,13 +505,13 @@ async function deleteSelectedTemplate() {
 
 async function checkExtension() {
   saveForm();
-  connectionStatus.textContent = 'Đang kiểm tra...';
+  setConnectionDisplay('Đang kiểm tra...', false);
   try {
     const response = await sendToExtension({ type: 'PING' });
-    connectionStatus.textContent = `Đã kết nối extension v${response.version}.`;
+    setConnectionDisplay(`Đã kết nối extension v${response.version}.`, true);
     return true;
   } catch (error) {
-    connectionStatus.textContent = `Không kết nối được: ${error.message}`;
+    setConnectionDisplay(`Không kết nối được: ${error.message}`, false);
     advancedSettings.open = true;
     return false;
   }
@@ -495,7 +608,10 @@ function startPolling() {
 
 postTextInput.addEventListener('input', () => { updateCounters(); saveForm(); });
 groupLinksInput.addEventListener('input', () => { updateCounters(); saveForm(); });
-extensionIdInput.addEventListener('input', saveForm);
+extensionIdInput.addEventListener('input', () => {
+  saveForm();
+  setConnectionDisplay('Extension ID đã thay đổi, hãy kiểm tra lại.', false);
+});
 autoSubmitInput.addEventListener('change', saveForm);
 delayBeforePostInput.addEventListener('input', saveForm);
 delayAfterPostInput.addEventListener('input', saveForm);
@@ -506,13 +622,8 @@ imageInput.addEventListener('change', prepareSelectedImages);
 checkExtensionButton.addEventListener('click', checkExtension);
 startButton.addEventListener('click', startQueue);
 stopButton.addEventListener('click', stopQueue);
-templateSelect.addEventListener('change', () => {
-  if (!templateSelect.value) templateNameInput.value = '';
-  updateSelectedTemplateName();
-});
 saveTemplateButton.addEventListener('click', saveNewTemplate);
 updateTemplateButton.addEventListener('click', updateSelectedTemplate);
-loadTemplateButton.addEventListener('click', loadSelectedTemplate);
 deleteTemplateButton.addEventListener('click', deleteSelectedTemplate);
 
 updateCounters();

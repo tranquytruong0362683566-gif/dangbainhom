@@ -3,21 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f6f7f9">
   <title>Đăng bài nhóm Facebook</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="container">
-    <header>
-      <h1>Đăng bài lên nhiều nhóm</h1>
-      <p>Tự động mở nhóm, dán nội dung, tải nhiều ảnh, bấm Đăng và chuyển sang nhóm tiếp theo.</p>
+  <main class="app-container">
+    <header class="hero">
+      <div>
+        <span class="eyebrow">FACEBOOK GROUP POSTER</span>
+        <h1>Đăng bài lên nhiều nhóm</h1>
+        <p>Tạo nội dung, chọn mẫu có sẵn, tải nhiều ảnh và chạy hàng đợi đăng bài ngay trên một giao diện cân đối.</p>
+      </div>
+      <div class="hero-status">
+        <span class="status-dot"></span>
+        <span id="heroConnectionText">Chưa kiểm tra extension</span>
+      </div>
     </header>
 
     <details id="advancedSettings" class="card advanced-card">
       <summary>
-        <span>
-          <strong>Cài đặt nâng cao</strong>
-          <small>Extension ID và thiết lập tự động</small>
+        <span class="summary-main">
+          <span class="summary-icon">⚙</span>
+          <span>
+            <strong>Cài đặt nâng cao</strong>
+            <small>Extension ID và thiết lập tự động</small>
+          </span>
         </span>
         <span class="summary-toggle" aria-hidden="true"></span>
       </summary>
@@ -38,7 +49,10 @@
           <div class="setting-title">Thiết lập tự động</div>
           <label class="check-row" for="autoSubmit">
             <input id="autoSubmit" type="checkbox" checked>
-            <span>Tự động bấm nút Đăng sau khi nội dung và ảnh sẵn sàng</span>
+            <span>
+              <strong>Tự động bấm Đăng</strong>
+              <small>Sau khi nội dung và toàn bộ ảnh đã sẵn sàng.</small>
+            </span>
           </label>
           <div class="settings-grid">
             <label class="field-label" for="delayBeforePost">
@@ -50,75 +64,119 @@
               <div class="number-wrap"><input id="delayAfterPost" type="number" min="3" max="120" value="8"><span>giây</span></div>
             </label>
           </div>
-          <div class="hint">Lỗi riêng của một nhóm sẽ được ghi lại rồi chuyển sang nhóm tiếp theo. Lỗi chặn thao tác ở cấp tài khoản sẽ dừng hàng đợi.</div>
+          <div class="hint">Lỗi riêng của một nhóm sẽ được ghi lại rồi chuyển sang nhóm tiếp theo.</div>
         </div>
       </div>
     </details>
 
-    <section class="card template-card">
-      <div class="section-heading">
-        <div>
-          <div class="setting-title">Mẫu bài viết</div>
-          <div class="hint">Lưu nội dung và toàn bộ ảnh để dùng lại ở lần sau.</div>
+    <section class="workspace">
+      <aside class="template-panel template-panel-left" aria-label="Danh sách mẫu bên trái">
+        <div class="template-panel-head">
+          <div>
+            <span class="panel-kicker">KHO MẪU</span>
+            <h2>Mẫu bài viết</h2>
+          </div>
+          <span id="templateCount" class="badge">0 mẫu</span>
         </div>
-        <span id="templateCount" class="badge">0 mẫu</span>
-      </div>
+        <p class="panel-description">Bấm vào thẻ để dùng ngay nội dung và ảnh của mẫu.</p>
+        <div id="templateListLeft" class="template-list"></div>
+      </aside>
 
-      <div class="template-picker">
-        <label for="templateSelect">Mẫu đã lưu</label>
-        <div class="row template-select-row">
-          <select id="templateSelect">
-            <option value="">Chọn một mẫu bài viết</option>
-          </select>
-          <button id="loadTemplate" class="secondary" type="button">Dùng mẫu</button>
+      <section class="editor-column">
+        <section class="card composer-card">
+          <div class="card-head">
+            <div>
+              <span class="panel-kicker">NỘI DUNG</span>
+              <h2>Soạn bài đăng</h2>
+            </div>
+            <span class="counter-chip"><span id="charCount">0</span> ký tự</span>
+          </div>
+          <label class="sr-only" for="postText">Nội dung bài viết</label>
+          <textarea id="postText" rows="11" placeholder="Nhập nội dung cần đăng..."></textarea>
+        </section>
+
+        <section class="card image-card">
+          <div class="card-head compact-head">
+            <div>
+              <span class="panel-kicker">HÌNH ẢNH</span>
+              <h2>Ảnh bài viết</h2>
+            </div>
+            <label class="file-button" for="imageInput">Chọn nhiều ảnh</label>
+          </div>
+          <input id="imageInput" class="file-input-hidden" type="file" accept="image/*" multiple>
+          <div class="hint">Ảnh được thu nhỏ trước khi chuyển sang extension và được lưu cùng mẫu bài viết.</div>
+          <div id="imagePreview" class="preview-grid"></div>
+        </section>
+
+        <section class="card save-template-card">
+          <div class="card-head compact-head">
+            <div>
+              <span class="panel-kicker">QUẢN LÝ MẪU</span>
+              <h2>Lưu bài đang soạn</h2>
+            </div>
+            <span id="selectedTemplateBadge" class="badge subtle-badge">Chưa chọn mẫu</span>
+          </div>
+          <label for="templateName">Tên mẫu</label>
+          <input id="templateName" type="text" maxlength="80" autocomplete="off" placeholder="Ví dụ: Mẫu giới thiệu sản phẩm">
+          <div class="template-buttons">
+            <button id="saveTemplate" class="primary-soft" type="button">Lưu mẫu mới</button>
+            <button id="updateTemplate" class="secondary" type="button">Cập nhật mẫu</button>
+            <button id="deleteTemplate" class="danger" type="button">Xóa mẫu</button>
+          </div>
+          <div id="templateStatus" class="hint">Chưa có mẫu được chọn.</div>
+        </section>
+
+        <section class="card group-card">
+          <div class="card-head compact-head">
+            <div>
+              <span class="panel-kicker">NHÓM FACEBOOK</span>
+              <h2>Danh sách nhóm cần đăng</h2>
+            </div>
+            <span class="counter-chip"><span id="groupCount">0</span> nhóm</span>
+          </div>
+          <label class="sr-only" for="groupLinks">Danh sách link nhóm</label>
+          <textarea id="groupLinks" rows="8" placeholder="Mỗi dòng một link, ví dụ:&#10;https://www.facebook.com/groups/123456789"></textarea>
+        </section>
+
+        <section class="action-card">
+          <div>
+            <strong>Sẵn sàng chạy hàng đợi</strong>
+            <div id="operationStatus" class="operation-status">Nhập nội dung, ảnh và danh sách nhóm để bắt đầu.</div>
+          </div>
+          <div class="actions">
+            <button id="stopButton" class="danger" type="button">Dừng</button>
+            <button id="startButton" class="primary" type="button">Bắt đầu đăng tự động</button>
+          </div>
+        </section>
+
+        <section class="card status-card">
+          <div class="status-head">
+            <div>
+              <span class="panel-kicker">TIẾN TRÌNH</span>
+              <h2>Trạng thái hàng đợi</h2>
+            </div>
+            <span id="queueBadge" class="badge">Chưa chạy</span>
+          </div>
+          <div class="progress-line">
+            <div id="progressText" class="progress-text">0 / 0 nhóm</div>
+            <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+          </div>
+          <div id="currentGroup" class="current-group"></div>
+          <div id="resultList" class="result-list"></div>
+        </section>
+      </section>
+
+      <aside class="template-panel template-panel-right" aria-label="Danh sách mẫu bên phải">
+        <div class="template-panel-head">
+          <div>
+            <span class="panel-kicker">MẪU GẦN ĐÂY</span>
+            <h2>Chọn nhanh</h2>
+          </div>
+          <span class="panel-icon">✦</span>
         </div>
-      </div>
-
-      <label for="templateName">Tên mẫu</label>
-      <input id="templateName" type="text" maxlength="80" autocomplete="off" placeholder="Ví dụ: Bài giới thiệu sản phẩm tháng 7">
-
-      <div class="template-buttons">
-        <button id="saveTemplate" class="secondary" type="button">Lưu mẫu mới</button>
-        <button id="updateTemplate" class="secondary" type="button">Cập nhật mẫu</button>
-        <button id="deleteTemplate" class="danger" type="button">Xóa mẫu</button>
-      </div>
-      <div id="templateStatus" class="hint">Chưa chọn mẫu.</div>
-    </section>
-
-    <section class="card">
-      <label for="postText">Nội dung bài viết</label>
-      <textarea id="postText" rows="8" placeholder="Nhập nội dung cần đăng..."></textarea>
-      <div class="counter"><span id="charCount">0</span> ký tự</div>
-    </section>
-
-    <section class="card">
-      <label for="imageInput">Ảnh bài viết</label>
-      <input id="imageInput" type="file" accept="image/*" multiple>
-      <div class="hint">Có thể chọn nhiều ảnh. Ảnh được thu nhỏ trước khi chuyển sang extension.</div>
-      <div id="imagePreview" class="preview-grid"></div>
-    </section>
-
-    <section class="card">
-      <label for="groupLinks">Danh sách link nhóm</label>
-      <textarea id="groupLinks" rows="8" placeholder="Mỗi dòng một link, ví dụ:&#10;https://www.facebook.com/groups/123456789"></textarea>
-      <div class="counter"><span id="groupCount">0</span> nhóm hợp lệ</div>
-    </section>
-
-    <section class="actions">
-      <button id="startButton" class="primary" type="button">Bắt đầu đăng tự động</button>
-      <button id="stopButton" class="danger" type="button">Dừng hàng đợi</button>
-    </section>
-    <div id="operationStatus" class="operation-status">Sẵn sàng.</div>
-
-    <section class="card status-card">
-      <div class="status-head">
-        <h2>Trạng thái</h2>
-        <span id="queueBadge" class="badge">Chưa chạy</span>
-      </div>
-      <div id="progressText" class="progress-text">0 / 0 nhóm</div>
-      <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
-      <div id="currentGroup" class="current-group"></div>
-      <div id="resultList" class="result-list"></div>
+        <p class="panel-description">Các mẫu được chia đều sang hai bên để giao diện cân xứng và dễ chọn.</p>
+        <div id="templateListRight" class="template-list"></div>
+      </aside>
     </section>
   </main>
 
