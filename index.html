@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Đăng bài nhóm Facebook</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Đăng bài lên nhóm</h1>
+      <p>Chuẩn bị nội dung và ảnh cho từng nhóm Facebook.</p>
+    </header>
+
+    <section class="card">
+      <label for="extensionId">Extension ID</label>
+      <div class="row">
+        <input id="extensionId" type="text" autocomplete="off" placeholder="Dán Extension ID tại chrome://extensions">
+        <button id="checkExtension" class="secondary" type="button">Kiểm tra</button>
+      </div>
+      <div id="connectionStatus" class="hint">Chưa kiểm tra kết nối.</div>
+    </section>
+
+    <section class="card">
+      <label for="postText">Nội dung bài viết</label>
+      <textarea id="postText" rows="8" placeholder="Nhập nội dung cần đăng..."></textarea>
+      <div class="counter"><span id="charCount">0</span> ký tự</div>
+    </section>
+
+    <section class="card">
+      <label for="imageInput">Ảnh bài viết</label>
+      <input id="imageInput" type="file" accept="image/*" multiple>
+      <div class="hint">Có thể chọn nhiều ảnh. Ảnh được thu nhỏ trước khi chuyển sang extension.</div>
+      <div id="imagePreview" class="preview-grid"></div>
+    </section>
+
+    <section class="card">
+      <label for="groupLinks">Danh sách link nhóm</label>
+      <textarea id="groupLinks" rows="8" placeholder="Mỗi dòng một link, ví dụ:&#10;https://www.facebook.com/groups/123456789"></textarea>
+      <div class="counter"><span id="groupCount">0</span> nhóm hợp lệ</div>
+    </section>
+
+    <section class="actions">
+      <button id="startButton" class="primary" type="button">Bắt đầu chuẩn bị đăng</button>
+      <button id="stopButton" class="danger" type="button">Dừng hàng đợi</button>
+    </section>
+
+    <section class="card status-card">
+      <div class="status-head">
+        <h2>Trạng thái</h2>
+        <span id="queueBadge" class="badge">Chưa chạy</span>
+      </div>
+      <div id="progressText" class="progress-text">0 / 0 nhóm</div>
+      <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+      <div id="currentGroup" class="current-group"></div>
+      <div id="resultList" class="result-list"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
