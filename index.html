@@ -47,6 +47,10 @@
         <input id="autoSubmit" type="checkbox" checked>
         <span>Tự động bấm nút Đăng sau khi nội dung và ảnh sẵn sàng</span>
       </label>
+      <label class="check-row" for="sequentialTyping">
+        <input id="sequentialTyping" type="checkbox">
+        <span>Gõ tuần tự từng ký tự để Facebook nhận đầy đủ thao tác bàn phím và giữ đúng xuống dòng</span>
+      </label>
       <div class="settings-grid">
         <label class="field-label" for="delayBeforePost">
           <span>Chờ trước khi bấm Đăng</span>
@@ -55,6 +59,10 @@
         <label class="field-label" for="delayAfterPost">
           <span>Chờ sau khi đăng thành công</span>
           <div class="number-wrap"><input id="delayAfterPost" type="number" min="3" max="120" value="8"><span>giây</span></div>
+        </label>
+        <label class="field-label" for="typingDelay">
+          <span>Tốc độ gõ từng ký tự</span>
+          <div class="number-wrap"><input id="typingDelay" type="number" min="5" max="200" value="25"><span>ms</span></div>
         </label>
       </div>
       <div class="hint">Lỗi riêng của một nhóm sẽ được ghi lại rồi chuyển sang nhóm tiếp theo. Lỗi chặn thao tác ở cấp tài khoản sẽ dừng hàng đợi để kiểm tra.</div>
