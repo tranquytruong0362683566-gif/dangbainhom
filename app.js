@@ -6,8 +6,6 @@ const postTextInput = $('#postText');
 const imageInput = $('#imageInput');
 const groupLinksInput = $('#groupLinks');
 const autoSubmitInput = $('#autoSubmit');
-const sequentialTypingInput = $('#sequentialTyping');
-const typingDelayInput = $('#typingDelay');
 const delayBeforePostInput = $('#delayBeforePost');
 const delayAfterPostInput = $('#delayAfterPost');
 const checkExtensionButton = $('#checkExtension');
@@ -30,8 +28,6 @@ extensionIdInput.value = localStorage.getItem('fbGroupPoster.extensionId') || ''
 postTextInput.value = localStorage.getItem('fbGroupPoster.postText') || '';
 groupLinksInput.value = localStorage.getItem('fbGroupPoster.groupLinks') || '';
 autoSubmitInput.checked = localStorage.getItem('fbGroupPoster.autoSubmit') !== 'false';
-sequentialTypingInput.checked = localStorage.getItem('fbGroupPoster.sequentialTyping') === 'true';
-typingDelayInput.value = localStorage.getItem('fbGroupPoster.typingDelay') || '25';
 delayBeforePostInput.value = localStorage.getItem('fbGroupPoster.delayBeforePost') || '5';
 delayAfterPostInput.value = localStorage.getItem('fbGroupPoster.delayAfterPost') || '8';
 
@@ -72,8 +68,6 @@ function saveForm() {
   localStorage.setItem('fbGroupPoster.postText', postTextInput.value);
   localStorage.setItem('fbGroupPoster.groupLinks', groupLinksInput.value);
   localStorage.setItem('fbGroupPoster.autoSubmit', String(autoSubmitInput.checked));
-  localStorage.setItem('fbGroupPoster.sequentialTyping', String(sequentialTypingInput.checked));
-  localStorage.setItem('fbGroupPoster.typingDelay', String(clamp(typingDelayInput.value, 5, 200, 25)));
   localStorage.setItem('fbGroupPoster.delayBeforePost', String(clamp(delayBeforePostInput.value, 2, 60, 5)));
   localStorage.setItem('fbGroupPoster.delayAfterPost', String(clamp(delayAfterPostInput.value, 3, 120, 8)));
 }
@@ -196,8 +190,6 @@ async function startQueue() {
         groups,
         options: {
           autoSubmit: autoSubmitInput.checked,
-          sequentialTyping: sequentialTypingInput.checked,
-          typingDelayMs: clamp(typingDelayInput.value, 5, 200, 25),
           delayBeforePostMs: clamp(delayBeforePostInput.value, 2, 60, 5) * 1000,
           delayAfterPostMs: clamp(delayAfterPostInput.value, 3, 120, 8) * 1000,
           continueOnError: true
@@ -262,8 +254,6 @@ postTextInput.addEventListener('input', () => { updateCounters(); saveForm(); })
 groupLinksInput.addEventListener('input', () => { updateCounters(); saveForm(); });
 extensionIdInput.addEventListener('input', saveForm);
 autoSubmitInput.addEventListener('change', saveForm);
-sequentialTypingInput.addEventListener('change', saveForm);
-typingDelayInput.addEventListener('input', saveForm);
 delayBeforePostInput.addEventListener('input', saveForm);
 delayAfterPostInput.addEventListener('input', saveForm);
 imageInput.addEventListener('change', prepareSelectedImages);
