@@ -63,8 +63,12 @@
               <span>Chờ sau khi đăng thành công</span>
               <div class="number-wrap"><input id="delayAfterPost" type="number" min="3" max="120" value="8"><span>giây</span></div>
             </label>
+            <label class="field-label" for="delayBetweenPosts">
+              <span>Chờ trước lượt đăng tiếp theo</span>
+              <div class="number-wrap"><input id="delayBetweenPosts" type="number" min="0" max="1440" step="1" value="1"><span>phút</span></div>
+            </label>
           </div>
-          <div class="hint">Lỗi riêng của một nhóm sẽ được ghi lại rồi chuyển sang nhóm tiếp theo.</div>
+          <div class="hint">Sau khi một bài đăng thành công, extension sẽ đóng tab hiện tại, đếm thời gian theo phút rồi mới mở nhóm tiếp theo. Nhập 0 để chuyển ngay.</div>
         </div>
 
         <div class="advanced-divider"></div>

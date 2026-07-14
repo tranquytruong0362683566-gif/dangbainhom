@@ -8,6 +8,7 @@ const groupLinksInput = $('#groupLinks');
 const autoSubmitInput = $('#autoSubmit');
 const delayBeforePostInput = $('#delayBeforePost');
 const delayAfterPostInput = $('#delayAfterPost');
+const delayBetweenPostsInput = $('#delayBetweenPosts');
 const checkExtensionButton = $('#checkExtension');
 const startButton = $('#startButton');
 const stopButton = $('#stopButton');
@@ -62,6 +63,7 @@ groupLinksInput.value = localStorage.getItem('fbGroupPoster.groupLinks') || '';
 autoSubmitInput.checked = localStorage.getItem('fbGroupPoster.autoSubmit') !== 'false';
 delayBeforePostInput.value = localStorage.getItem('fbGroupPoster.delayBeforePost') || '5';
 delayAfterPostInput.value = localStorage.getItem('fbGroupPoster.delayAfterPost') || '8';
+delayBetweenPostsInput.value = localStorage.getItem('fbGroupPoster.delayBetweenPosts') || '1';
 advancedSettings.open = localStorage.getItem('fbGroupPoster.advancedOpen') === 'true';
 aiApiUrlInput.value = localStorage.getItem('fbGroupPoster.aiApiUrl') || 'https://console.flatkey.ai/v1/chat/completions';
 aiApiKeyInput.value = localStorage.getItem('fbGroupPoster.aiApiKey') || '';
@@ -108,6 +110,7 @@ function saveForm() {
   localStorage.setItem('fbGroupPoster.autoSubmit', String(autoSubmitInput.checked));
   localStorage.setItem('fbGroupPoster.delayBeforePost', String(clamp(delayBeforePostInput.value, 2, 60, 5)));
   localStorage.setItem('fbGroupPoster.delayAfterPost', String(clamp(delayAfterPostInput.value, 3, 120, 8)));
+  localStorage.setItem('fbGroupPoster.delayBetweenPosts', String(clamp(delayBetweenPostsInput.value, 0, 1440, 1)));
   localStorage.setItem('fbGroupPoster.aiApiUrl', aiApiUrlInput.value.trim());
   localStorage.setItem('fbGroupPoster.aiApiKey', aiApiKeyInput.value.trim());
   localStorage.setItem('fbGroupPoster.aiModel', aiModelInput.value.trim());
@@ -697,6 +700,7 @@ async function startQueue() {
           autoSubmit: autoSubmitInput.checked,
           delayBeforePostMs: clamp(delayBeforePostInput.value, 2, 60, 5) * 1000,
           delayAfterPostMs: clamp(delayAfterPostInput.value, 3, 120, 8) * 1000,
+          delayBetweenPostsMs: clamp(delayBetweenPostsInput.value, 0, 1440, 1) * 60 * 1000,
           continueOnError: true
         }
       }
@@ -731,7 +735,15 @@ function renderStatus(status) {
   queueBadge.textContent = labels[status.state] || status.state || 'Chưa chạy';
   progressText.textContent = `${completed} / ${total} nhóm`;
   progressBar.style.width = `${percent}%`;
-  currentGroup.textContent = status.currentUrl ? `Nhóm hiện tại: ${status.currentUrl}` : '';
+  if (status.nextRunAt && status.currentUrl) {
+    const remainingMs = Math.max(0, status.nextRunAt - Date.now());
+    const totalSeconds = Math.ceil(remainingMs / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    currentGroup.textContent = `Đang chờ lượt tiếp theo: ${minutes} phút ${String(seconds).padStart(2, '0')} giây · ${status.currentUrl}`;
+  } else {
+    currentGroup.textContent = status.currentUrl ? `Nhóm hiện tại: ${status.currentUrl}` : '';
+  }
   resultList.innerHTML = (status.results || []).slice().reverse().map((item) => {
     const cls = item.status === 'posted' ? 'ok' : item.status === 'skipped' ? 'skip' : 'error';
     const label = item.status === 'posted' ? 'Đã đăng' : item.status === 'skipped' ? 'Bỏ qua' : 'Lỗi';
@@ -764,6 +776,7 @@ extensionIdInput.addEventListener('input', () => {
 autoSubmitInput.addEventListener('change', saveForm);
 delayBeforePostInput.addEventListener('input', saveForm);
 delayAfterPostInput.addEventListener('input', saveForm);
+delayBetweenPostsInput.addEventListener('input', saveForm);
 aiApiUrlInput.addEventListener('input', saveForm);
 aiApiKeyInput.addEventListener('input', saveForm);
 aiModelInput.addEventListener('input', saveForm);
