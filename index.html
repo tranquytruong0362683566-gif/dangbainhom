@@ -54,6 +54,13 @@
               <small>Sau khi nội dung và toàn bộ ảnh đã sẵn sàng.</small>
             </span>
           </label>
+          <label class="check-row" for="autoLoop">
+            <input id="autoLoop" type="checkbox" checked>
+            <span>
+              <strong>Tự động chạy vòng tiếp theo</strong>
+              <small>Khi đăng hết danh sách nhóm, hệ thống sẽ chờ rồi tự quay lại nhóm đầu tiên.</small>
+            </span>
+          </label>
           <div class="settings-grid">
             <label class="field-label" for="delayBeforePost">
               <span>Chờ trước khi bấm Đăng</span>
@@ -67,8 +74,12 @@
               <span>Chờ trước lượt đăng tiếp theo</span>
               <div class="number-wrap"><input id="delayBetweenPosts" type="number" min="0" max="1440" step="1" value="1"><span>phút</span></div>
             </label>
+            <label class="field-label" for="delayBetweenLoops">
+              <span>Thời gian chờ mỗi vòng lặp</span>
+              <div class="number-wrap"><input id="delayBetweenLoops" type="number" min="0" max="1440" step="1" value="5"><span>phút</span></div>
+            </label>
           </div>
-          <div class="hint">Sau khi một bài đăng thành công, extension sẽ đóng tab hiện tại, đếm thời gian theo phút rồi mới mở nhóm tiếp theo. Nhập 0 để chuyển ngay.</div>
+          <div class="hint">Thời gian giữa lượt áp dụng sau từng nhóm. Thời gian mỗi vòng lặp áp dụng sau khi đã đăng hết toàn bộ danh sách; nhập 0 để bắt đầu vòng mới ngay.</div>
         </div>
 
         <div class="advanced-divider"></div>
